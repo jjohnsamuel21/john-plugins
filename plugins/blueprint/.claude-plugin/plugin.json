@@ -4,6 +4,8 @@
   "description": "Interview-driven requirements, design, and build planning: discover an idea, write a PRD, design the UX with a clickable prototype, produce HLD and LLD, write a test plan, review everything, then pass an approval gate into an ordered build plan. Also maps existing codebases and keeps documents in sync with change.",
   "version": "0.3.0",
   "license": "MIT",
+  "homepage": "https://github.com/jjohnsamuel21/john-plugins",
+  "repository": "https://github.com/jjohnsamuel21/john-plugins",
   "author": {
     "name": "John"
   },

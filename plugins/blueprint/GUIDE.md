@@ -11,7 +11,7 @@ Blueprint turns an idea into approved documents **before** any code is written, 
 **Option 1: from your GitHub repository** (after you push it, see the repository README)
 
 ```cmd
-claude plugin marketplace add <your-github-user>/john-plugins
+claude plugin marketplace add jjohnsamuel21/john-plugins
 claude plugin install blueprint@john-plugins
 ```
 

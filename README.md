@@ -11,7 +11,7 @@ A Claude Code plugin marketplace. It currently lists one plugin.
 Run these in your terminal (Windows CMD works):
 
 ```cmd
-claude plugin marketplace add <your-github-user>/john-plugins
+claude plugin marketplace add jjohnsamuel21/john-plugins
 claude plugin install blueprint@john-plugins
 ```
 
