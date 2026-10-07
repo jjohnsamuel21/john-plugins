@@ -1,0 +1,14 @@
+{
+  "name": "john-plugins",
+  "description": "John's Claude Code plugins",
+  "owner": {
+    "name": "John"
+  },
+  "plugins": [
+    {
+      "name": "blueprint",
+      "source": "./plugins/blueprint",
+      "description": "From idea to build plan before any code is written: discovery interview, PRD, UX with a clickable prototype, HLD/LLD, test plan, review, an approval gate, codebase mapping, and document sync."
+    }
+  ]
+}

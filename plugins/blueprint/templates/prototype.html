@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototype</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --ink: #1c1f26; --muted: #6b7280;
+    --accent: #2f6fed; --accent-ink: #ffffff; --ok: #1a7f4b; --bad: #c0392b;
+    --line: #e3e5ea; --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a; --card: #1d2026; --ink: #eceef2; --muted: #9aa1ad;
+      --accent: #6e9bff; --accent-ink: #0d1117; --ok: #3ecf8e; --bad: #ff7b6b; --line: #2b2f38;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 system-ui, "Segoe UI", sans-serif;
+    display: flex; gap: 24px; justify-content: center; align-items: flex-start; flex-wrap: wrap;
+  }
+  #device {
+    width: 390px; max-width: 100%; min-height: 720px; display: flex; flex-direction: column;
+    background: var(--card); border: 1px solid var(--line); border-radius: 28px; overflow: hidden;
+  }
+  body.web #device { width: 980px; border-radius: 12px; }
+  #appbar { padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  #screen { flex: 1; padding: 16px; overflow: auto; }
+  #tabbar { display: flex; border-top: 1px solid var(--line); }
+  #tabbar button { flex: 1; padding: 12px 4px; background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; }
+  #tabbar button.on { color: var(--accent); font-weight: 600; }
+
+  #panel { width: 300px; max-width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+  #panel h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  #panel label { display: block; margin: 10px 0 4px; color: var(--muted); font-size: 13px; }
+  #panel select, #panel button { width: 100%; padding: 8px; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  #panel button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); margin-top: 10px; cursor: pointer; }
+  #hud { margin-top: 14px; padding: 10px; border-radius: 8px; background: var(--bg); font-variant-numeric: tabular-nums; }
+  #hud strong { font-size: 20px; }
+  .pass { color: var(--ok); font-weight: 600; } .fail { color: var(--bad); font-weight: 600; }
+  #results { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+
+  /* Building blocks for screens */
+  .btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; text-align: center; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .item { padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; cursor: pointer; display: flex; justify-content: space-between; }
+  .field { margin: 12px 0; } .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select { width: 100%; padding: 10px; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  .muted { color: var(--muted); } .center { text-align: center; padding: 32px 8px; }
+  .banner { padding: 10px; border-radius: 8px; background: var(--bad); color: #fff; margin-bottom: 10px; }
+  .todo { border: 1px dashed var(--muted); padding: 10px; border-radius: 8px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="device">
+  <div id="appbar"><span id="title"></span><span class="muted" id="sid"></span></div>
+  <div id="screen"></div>
+  <div id="tabbar"></div>
+</div>
+
+<div id="panel">
+  <h2>Prototype controls</h2>
+  <label for="journey">Journey</label>
+  <select id="journey"></select>
+  <button class="primary" id="start">Start journey</button>
+  <div id="hud">
+    <div>Taps <strong id="taps">0</strong> / <span id="budget">-</span></div>
+    <div>Seconds <strong id="secs">0</strong></div>
+    <div id="status" class="muted">Choose a journey and press Start.</div>
+  </div>
+  <label for="state">Screen state</label>
+  <select id="state">
+    <option value="ok">populated</option><option value="empty">empty</option>
+    <option value="loading">loading</option><option value="error">error</option><option value="first">first-time</option>
+  </select>
+  <label for="device-mode">Device</label>
+  <select id="device-mode"><option value="phone">phone</option><option value="web">web</option></select>
+  <h2 style="margin-top:16px">Results this session</h2>
+  <ol id="results"></ol>
+  <button id="copy" style="margin-top:10px">Copy results</button>
+</div>
+
+<script>
+/* =====================================================================
+   EDIT THIS SECTION ONLY. Everything below the END marker is the engine.
+   Rules: tappable elements need data-go="<screen id>" (navigate) or
+   data-tap (count a tap without navigating). Mock data only.
+   ===================================================================== */
+
+// One entry per journey in the PRD. budget = maximum taps allowed.
+const JOURNEYS = [
+  { id: 'J-1', name: 'Create an item (EXAMPLE - replace)', budget: 3, start: 'home', end: 'done' },
+];
+
+// Bottom tabs (phone) or top tabs (web). Remove or edit as the design requires.
+const TABS = [
+  { screen: 'home', label: 'Home' },
+  { screen: 'settings', label: 'Settings' },
+];
+
+// One entry per screen in the inventory. render(state) returns HTML.
+// state is one of: ok, empty, loading, error, first.
+const SCREENS = {
+  home: {
+    id: 'S-001', title: 'Home', tab: 'home',
+    render: (s) => {
+      if (s === 'loading') return '<div class="center muted">Loading...</div>';
+      if (s === 'error') return '<div class="banner">Could not load. Tap to retry.</div><button class="btn" data-tap>Retry</button>';
+      if (s === 'empty' || s === 'first') return '<div class="center"><p>Nothing here yet.</p><button class="btn primary" data-go="create">Add your first item</button></div>';
+      return '<div class="item" data-go="create"><span>+ New item</span><span class="muted">&rsaquo;</span></div>' +
+             '<div class="item" data-tap><span>Sample item</span><span class="muted">today</span></div>';
+    }
+  },
+  create: {
+    id: 'S-002', title: 'Create', tab: 'home',
+    render: () => '<div class="field"><label>Name</label><input value="Morning routine"></div>' +
+                  '<button class="btn primary" data-go="done">Save</button>' +
+                  '<button class="btn" data-go="home">Cancel</button>'
+  },
+  done: {
+    id: 'S-003', title: 'Saved', tab: 'home',
+    render: () => '<div class="center"><p>Saved.</p><button class="btn" data-go="home">Back to home</button></div>'
+  },
+  settings: {
+    id: 'S-004', title: 'Settings', tab: 'settings',
+    render: () => '<div class="todo">Placeholder screen. Replace with the real design.</div>'
+  },
+};
+
+/* ======================= END OF EDITABLE SECTION ===================== */
+
+const $ = (q) => document.querySelector(q);
+let current = Object.keys(SCREENS)[0];
+let state = 'ok';
+let active = null;      // journey in progress
+let taps = 0;
+let startedAt = 0;
+const results = [];
+
+function go(id) {
+  if (!SCREENS[id]) { console.warn('Unknown screen:', id); return; }
+  current = id;
+  draw();
+  if (active && id === active.end) finish();
+}
+
+function draw() {
+  const sc = SCREENS[current];
+  $('#title').textContent = sc.title;
+  $('#sid').textContent = sc.id || current;
+  $('#screen').innerHTML = sc.render(state);
+  $('#tabbar').innerHTML = TABS.map(t =>
+    '<button data-go="' + t.screen + '" class="' + (sc.tab === t.screen ? 'on' : '') + '">' + t.label + '</button>'
+  ).join('');
+}
+
+function hud() {
+  $('#taps').textContent = taps;
+  $('#budget').textContent = active ? active.budget : '-';
+  $('#secs').textContent = active ? Math.round((Date.now() - startedAt) / 1000) : $('#secs').textContent;
+}
+
+function start() {
+  active = JOURNEYS.find(j => j.id === $('#journey').value);
+  taps = 0; startedAt = Date.now();
+  $('#status').className = 'muted';
+  $('#status').textContent = 'Running ' + active.id + ': ' + active.name + '. Taps count from now.';
+  go(active.start);
+  hud();
+}
+
+function finish() {
+  const secs = Math.round((Date.now() - startedAt) / 1000);
+  const pass = taps <= active.budget;
+  results.push({ id: active.id, name: active.name, taps, budget: active.budget, secs, pass });
+  $('#status').className = pass ? 'pass' : 'fail';
+  $('#status').textContent = (pass ? 'PASS' : 'FAIL') + ': ' + taps + ' taps (budget ' + active.budget + '), ' + secs + ' s';
+  $('#results').innerHTML = results.map(r =>
+    '<li>' + r.id + ': ' + r.taps + '/' + r.budget + ' taps, ' + r.secs + ' s - ' + (r.pass ? 'pass' : 'FAIL') + '</li>'
+  ).join('');
+  active = null;
+  hud();
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-go],[data-tap]');
+  if (!el) return;
+  if (active) taps++;
+  if (el.dataset.go) go(el.dataset.go); else draw();
+  hud();
+});
+
+$('#journey').innerHTML = JOURNEYS.map(j => '<option value="' + j.id + '">' + j.id + ' - ' + j.name + ' (' + j.budget + ' taps)</option>').join('');
+$('#start').addEventListener('click', start);
+$('#state').addEventListener('change', (e) => { state = e.target.value; draw(); });
+$('#device-mode').addEventListener('change', (e) => { document.body.classList.toggle('web', e.target.value === 'web'); });
+$('#copy').addEventListener('click', () => {
+  const text = results.map(r => r.id + ' | budget ' + r.budget + ' | measured ' + r.taps + ' taps | ' + r.secs + ' s | ' + (r.pass ? 'pass' : 'fail')).join('\n');
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  $('#status').textContent = text ? 'Results copied.' : 'No results yet.';
+});
+setInterval(() => { if (active) hud(); }, 500);
+draw();
+</script>
+</body>
+</html>
